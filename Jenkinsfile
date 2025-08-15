@@ -17,18 +17,17 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "-------> Start Build Stage"
-                    #ls -la
-                    #node --version
-                    #npm --version
+                    ls -la
+                    node --version
+                    npm --version
                     npm ci
                     npm run build
-                    #ls -la
+                    ls -la
                 '''
             }
         }
 
-/*         stage('Tests') {
+        stage('Tests') {
             parallel {
                 stage('Unit tests') {
                     agent {
@@ -40,7 +39,7 @@ pipeline {
 
                     steps {
                         sh '''
-                            test -f build/index.html
+                            #test -f build/index.html
                             npm test
                         '''
                     }
@@ -70,14 +69,32 @@ pipeline {
 
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Local', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
             }
-        } */
+        }
 
-        stage('Deploy') {
+        stage('Deploy staging') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build
+                '''
+            }
+        }
+
+        stage('Deploy prod') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -90,16 +107,16 @@ pipeline {
                     node_modules/.bin/netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --no-build --dir=build --prod
+                    node_modules/.bin/netlify deploy --dir=build --prod
                 '''
             }
         }
 
-                stage('Prod E2E') {
-                    agent {
-                        docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                            reuseNode true
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
                 }
             }
 
