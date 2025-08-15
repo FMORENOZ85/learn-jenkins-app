@@ -104,7 +104,7 @@ pipeline {
             }
 
             environment {
-                CI_ENVIRONMENT_URL = 'https://jenkins-udemy.netlify.app/'
+                CI_ENVIRONMENT_URL = 'https://jenkins-udemy.netlify.app'
             }
 
             steps {
